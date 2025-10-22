@@ -1,6 +1,6 @@
 import pandas
 
-#TODO 1: Create a dictionary int he format: {"A": "Alfa",...}
+#TODO 1: Create a dictionary in the format: {"A": "Alfa",...}
 data_input = pandas.read_csv("nato_phonetic_alphabet.csv")
 alphabet_dict = {row.letter:row.code for (index, row) in data_input.iterrows()}
 
