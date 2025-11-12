@@ -13,7 +13,7 @@ card_front = PhotoImage(file="images/card_front.png")
 try:
     csv_data = pandas.read_csv("data/words_to_learn.csv")
 except FileNotFoundError:
-    csv_data = pandas.read_csv("data/french_words_test.csv")
+    csv_data = pandas.read_csv("data/french_words.csv")
 
 vocabulary_list = csv_data.to_dict(orient="records")
 WORD_PAIR = {}
