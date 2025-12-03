@@ -18,23 +18,24 @@ av_api_parameters = {
     "apikey": av_api_access_key,
 }
 
-#alphavantage API request
-av_api_request = requests.get(av_api_endpoint, params=av_api_parameters)
-av_api_request.raise_for_status()
-
-#alphavantage API data processing
-av_data = av_api_request.json()
-av_data_timeseries = av_data['Time Series (Daily)']
-av_data_days = list(av_data_timeseries.keys())
-av_data_yesterday = av_data_days[0]
-av_data_twodaysago = av_data_days[1]
-
 #stock price change calculation
 def check_stock_price_change():
-    stock_price_yesterday = float(av_data_timeseries[av_data_yesterday]["4. close"])
-    stock_price_twodaysago = float(av_data_timeseries[av_data_twodaysago]["4. close"])
+    # # alphavantage API request
+    # av_api_request = requests.get(av_api_endpoint, params=av_api_parameters)
+    # av_api_request.raise_for_status()
+    #
+    # # alphavantage API data processing
+    # av_data = av_api_request.json()
+    # av_data_timeseries = av_data['Time Series (Daily)']
+    # av_data_days = [value for (key, value) in av_data_timeseries.items()]
+    # stock_price_yesterday = float(av_data_days[0]["4. close"])
+    # stock_price_twodaysago = float(av_data_days[1]["4. close"])
+    stock_price_yesterday = 429.15
+    stock_price_twodaysago = 470.18
     stock_price_change = round(((stock_price_yesterday - stock_price_twodaysago)/stock_price_twodaysago)*100, 0)
-    return stock_price_change
+    if abs(stock_price_change) >= 5:
+        return True, stock_price_change
+
 #-----------------------------------------------------------------------------------------------------------------------
 ## STEP 2: Use https://newsapi.org
 # Instead of printing ("Get News"), actually get the first 3 news pieces for the COMPANY_NAME. 
@@ -48,14 +49,14 @@ newsapi_parameters = {
     "language": "en",
 }
 
-#newsapi API request
-newsapi_api_request = requests.get(newsapi_endpoint, params=newsapi_parameters)
-newsapi_api_request.raise_for_status()
-
-#newsapi data processing
-newsapi_data = newsapi_api_request.json()
-newsapi_data_articles = newsapi_data['articles']
 def get_news():
+    # newsapi API request
+    newsapi_api_request = requests.get(newsapi_endpoint, params=newsapi_parameters)
+    newsapi_api_request.raise_for_status()
+
+    # newsapi data processing
+    newsapi_data = newsapi_api_request.json()
+    newsapi_data_articles = newsapi_data['articles']
     newsapi_news = {newsapi_data_articles[news_number]["title"]: newsapi_data_articles[news_number]["description"]
             for news_number in range(3)}
     return newsapi_news
@@ -84,18 +85,19 @@ Brief: We at Insider Monkey have gone over 821 13F filings that hedge funds and 
 """
 
 def stock_trading_news_alert():
-    change = check_stock_price_change()
-    #change = 0.5
-    if abs(change) >= 5:
+    change_significant, change = check_stock_price_change()
+    if change_significant:
         news = get_news()
         if change < 0:
-            message = f"{STOCK}: 🔻{change}%\n"
+            header = f"{STOCK}: 🔻{change}%\n"
         else:
-            message = f"{STOCK}: 🔺{change}%\n"
+            header = f"{STOCK}: 🔺{change}%\n"
         for title in news:
-            message += (f"Headline: {title}\n"
-                        f"Brief: {news[title]}\n\n")
-        send_sms(message)
+            message = (f"Headline: {title}\n"
+                        f"Brief: {news[title]}")
+            sms_text = header + message
+            #print(sms_text)
+            send_sms(sms_text)
 
 stock_trading_news_alert()
 
