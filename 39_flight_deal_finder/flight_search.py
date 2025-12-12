@@ -1,4 +1,8 @@
-import requests, os
+import requests, os, datetime, dateutil.relativedelta
+
+ORIGIN = "LON"
+tomorrow = (datetime.datetime.now() + datetime.timedelta(days=+1)).strftime("%Y-%m-%d")
+in_six_months = (datetime.datetime.now() + datetime.timedelta(days=+183)).strftime("%Y-%m-%d")
 
 class FlightSearch:
     #This class is responsible for talking to the Flight Search API.
@@ -12,6 +16,7 @@ class FlightSearch:
         self.auth_headers = {"Authorization": f"Bearer {self.token}"}
         self.city_endpoint = "https://test.api.amadeus.com/v1/reference-data/locations/cities"
 
+# token is valid for 30 minutes, one could implement a timer, that requests a new token after running out
     def get_token(self):
         request = requests.post(self.token_endpoint, data=self.token_body, headers=self.token_headers)
         request.raise_for_status()
@@ -19,7 +24,7 @@ class FlightSearch:
         token = str(data["access_token"])
         return token
 
-    def get_iata_city_codes(self, city_list):
+    def get_iata_city_codes(self, city_list: list):
         iata_city_codes = []
         for city in city_list:
             cities_parameters = {"keyword": f"{city.upper()}"}
@@ -30,3 +35,19 @@ class FlightSearch:
             iata_city_codes.append(iata_city_code)
         return iata_city_codes
 
+    def find_cheapest_date(self, destination: str, price_limit: int):
+        """
+
+        :param destination: As IATA city code
+        :return:
+        """
+        cheapest_date_parameters = {
+            "origin": ORIGIN,
+            "destination": destination,
+            "departureDate": f"{tomorrow},{in_six_months}",
+            "maxPrice": price_limit,
+        }
+        request = requests.get(self.city_endpoint, params=cheapest_date_parameters, headers=self.auth_headers)
+        request.raise_for_status()
+        data = request.json()
+        return data

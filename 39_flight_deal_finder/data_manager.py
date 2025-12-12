@@ -17,16 +17,14 @@ class DataManager:
         data = read.json()
         return data
 
-    def edit_data(self, column_to_change, value_to_change):
-        data = self.get_data()
-        for entries in data["prices"]:
-            object_id = str(entries["id"])
-            edit_endpoint = f"{self.endpoint}/{object_id}"
-            parameters = {
-                "price": {
-                    f"{column_to_change}": f"{value_to_change}",
-                }
+    def edit_data(self, line_to_change: str, column_to_change: str, value_to_change: str):
+        edit_endpoint = f"{self.endpoint}/{line_to_change}"
+        parameters = {
+            "price": {
+                f"{column_to_change}": f"{value_to_change}",
             }
-            write = requests.get(edit_endpoint, headers=self.headers, params=parameters)
-            write.raise_for_status()
-        print("Data successfully updated")
+        }
+        write = requests.put(edit_endpoint, headers=self.headers, json=parameters)
+        write.raise_for_status()
+        if write.status_code == 200:
+            print(f"Successfully updated \"{value_to_change}\" in line: {line_to_change} / column: {column_to_change}")
