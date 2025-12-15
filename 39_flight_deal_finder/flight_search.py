@@ -1,4 +1,7 @@
-import requests, os, datetime, dateutil.relativedelta
+import requests, os, datetime, dateutil.relativedelta, copy
+from flight_data import FlightData
+
+api_mock = FlightData()
 
 ORIGIN = "LON"
 tomorrow = (datetime.datetime.now() + datetime.timedelta(days=+1)).strftime("%Y-%m-%d")
@@ -15,6 +18,7 @@ class FlightSearch:
         self.token = self.get_token()
         self.auth_headers = {"Authorization": f"Bearer {self.token}"}
         self.city_endpoint = "https://test.api.amadeus.com/v1/reference-data/locations/cities"
+        self.cheapest_date_endpoint = "https://test.api.amadeus.com/v1/shopping/flight-dates"
 
 # token is valid for 30 minutes, one could implement a timer, that requests a new token after running out
     def get_token(self):
@@ -35,19 +39,23 @@ class FlightSearch:
             iata_city_codes.append(iata_city_code)
         return iata_city_codes
 
-    def find_cheapest_date(self, destination: str, price_limit: int):
+    def find_cheapest_date(self, iata_price_pair: dict):
         """
 
-        :param destination: As IATA city code
+        :param iata_price_pair: As dict with iataCode and price
         :return:
         """
-        cheapest_date_parameters = {
-            "origin": ORIGIN,
-            "destination": destination,
-            "departureDate": f"{tomorrow},{in_six_months}",
-            "maxPrice": price_limit,
-        }
-        request = requests.get(self.city_endpoint, params=cheapest_date_parameters, headers=self.auth_headers)
-        request.raise_for_status()
-        data = request.json()
-        return data
+        date_list = []
+        for entry in iata_price_pair:
+            cheapest_date_parameters = {
+                "origin": ORIGIN,
+                "destination": entry,
+                "departureDate": f"{tomorrow},{in_six_months}",
+                "maxPrice": iata_price_pair[entry],
+            }
+            try:
+                [cheapest_flight] = api_mock.generate_answer(cheapest_date_parameters)["data"]
+                date_list.append(copy.deepcopy(cheapest_flight))
+            except TypeError:
+                pass
+        return date_list
