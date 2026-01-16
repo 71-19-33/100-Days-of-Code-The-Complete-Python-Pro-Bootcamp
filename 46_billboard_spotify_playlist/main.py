@@ -20,3 +20,5 @@ page_content = BeautifulSoup(request.text, "html.parser")
 song_titles_tags = page_content.select(selector=".chart-name span:nth-of-type(2)")
 song_titles = [title.get_text() for title in song_titles_tags]
 print(song_titles)
+
+#Lesson aborted as spotify did not allow to create dev apps at the time
