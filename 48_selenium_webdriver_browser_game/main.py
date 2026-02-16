@@ -13,11 +13,11 @@ driver = webdriver.Firefox()
 #-----Get the event name and date from the website:
 driver.get("https://www.python.org/")
 
-event_dates = driver.find_elements(By.CSS_SELECTOR, ".event-widget .menu time")
+event_times = driver.find_elements(By.CSS_SELECTOR, ".event-widget .menu time")
 event_names = driver.find_elements(By.CSS_SELECTOR, ".event-widget .menu a")
 
 event_schedule = {
-    i: {"time": date.text, "name": name.text} for i, (date, name) in enumerate(zip(event_dates, event_names))
+    i: {"time": time.text, "name": name.text} for i, (time, name) in enumerate(zip(event_times, event_names))
 }
 
 print(event_schedule)
