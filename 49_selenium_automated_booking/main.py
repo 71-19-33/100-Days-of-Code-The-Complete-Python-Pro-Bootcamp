@@ -6,7 +6,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 import os
+import calendar
 from datetime import date, timedelta
+
+class CustomError(Exception):
+    pass
 
 #credentials
 ACCOUNT_EMAIL = "student@test.com"
@@ -18,13 +22,16 @@ COUNTER_BOOKINGS = 0
 COUNTER_WAITLISTS = 0
 COUNTER_NOJOB = 0
 COURSES_PROCESSED = ""
+COURSES_VERIFIED = ""
+COURSES_RESULT = ""
 
 #calculate desired date
-def find_date(weekday_desired: int):
-    date_now = date.today()
-    weekday_now = date_now.weekday()
-    weekday_difference = abs(weekday_desired - weekday_now)
-    date_desired = date_now + timedelta(days=weekday_difference)
+def find_date(query_weekday: str):
+    query_weekday_nr = list(calendar.day_name).index(query_weekday)
+    today = date.today()
+    today_weekday_nr = today.weekday()
+    weekday_difference = (query_weekday_nr - today_weekday_nr) % 7
+    date_desired = today + timedelta(days=weekday_difference)
     return date_desired
 
 #configure firefox profile
@@ -38,28 +45,29 @@ options.profile = firefox_profile
 driver = webdriver.Firefox(options=options)
 driver.get(GYM_URL)
 
-#login
+#webpage: login
 login = driver.find_element(By.ID, "login-button")
 login.click()
-##enter credentials
+
+#webpage: enter credentials
 mail_field = driver.find_element(By.ID, "email-input")
 mail_field.send_keys(ACCOUNT_EMAIL)
 mail_field = driver.find_element(By.ID, "password-input")
 mail_field.send_keys(ACCOUNT_PASSWORD, Keys.RETURN)
 
-#wait for schedule
+#webpage: wait for schedule
 schedule = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "schedule-page")))
 
-#interact with any event on a given weekday at a given time
-def book_any_event(day_desired: int, time_desired: int):
+#webpage: interact with any event on a given weekday at a given time
+def book_any_event(class_weekday: str, class_time: str):
     global COUNTER_NOJOB, COUNTER_BOOKINGS, COUNTER_WAITLISTS, COURSES_PROCESSED
-    date_desired = find_date(day_desired)
-    date_desired_events = driver.find_elements(By.CSS_SELECTOR, f"[id*='{date_desired}-{time_desired}']")
+    date_desired = find_date(class_weekday)
+    date_desired_events = driver.find_elements(By.CSS_SELECTOR, f"[id*='{date_desired}-{class_time}']")
     ##find details
     for entry in date_desired_events:
         try:
             class_title = entry.find_element(By.TAG_NAME, "h3").text
-            booking_button = entry.find_element(By.CSS_SELECTOR, f"button[id*='{time_desired}']")
+            booking_button = entry.find_element(By.CSS_SELECTOR, f"button[id*='{class_time}']")
             course_description = f"{class_title} on {date_desired}"
             if booking_button.text == "Book Class":
                 booking_button.click()
@@ -84,21 +92,34 @@ def book_any_event(day_desired: int, time_desired: int):
             continue
     print(f"{event} {course_description}")
     COURSES_PROCESSED += f"{event_type} {course_description}\n"
+    try:
+        #going to the bookings page
+        my_bookings_button = driver.find_element(By.ID, "my-bookings-link")
+        my_bookings_button.click()
+        my_booked_courses = driver.find_elements(By.CLASS_NAME, "MyBookings_bookingCard_VRdrR")
+        print(len(my_booked_courses))
+        #going back to the schedule page
+        my_schedule_button = driver.find_element(By.ID, "schedule-link")
+        my_schedule_button.click()
+    except:
+        pass
 
-#interact with an event next tuesday 6pm => tue 6pm not available, wednesday is used
-book_any_event(1, 1800)
-book_any_event(3, 1800)
+
+#webpage: interact with an event next tuesday 6pm + next thursday 6pm
+book_any_event(class_weekday="Tuesday", class_time="1800")
+book_any_event(class_weekday="Thursday", class_time="1800")
 
 #print summary
-print(f"""\n
---- BOOKING SUMMARY ---
-Classes booked: {COUNTER_BOOKINGS}
-Waitlists joined: {COUNTER_WAITLISTS}
-Already booked/waitlisted: {COUNTER_NOJOB}
-Total classes processed: {COUNTER_BOOKINGS+COUNTER_WAITLISTS+COUNTER_NOJOB}""")
-print(f"""\n
---- DETAILED CLASS LIST ---
-{COURSES_PROCESSED}""")
+# --- BOOKING SUMMARY ---
+# Classes booked: {COUNTER_BOOKINGS}
+# Waitlists joined: {COUNTER_WAITLISTS}
+# Already booked/waitlisted: {COUNTER_NOJOB}
+print(f"\n--- Total classes processed: {COUNTER_BOOKINGS+COUNTER_WAITLISTS+COUNTER_NOJOB}")
+# print(f"""\n--- DETAILED CLASS LIST ---{COURSES_PROCESSED}""")
+print(f"\n--- VERIFYING ON MY BOOKINGS PAGE ---\n {COURSES_VERIFIED}")
+print(f"\n--- VERIFICATION RESULT ---\n {COURSES_RESULT}")
+
+
 
 #close the driver
-#driver.quit()
+driver.quit()
