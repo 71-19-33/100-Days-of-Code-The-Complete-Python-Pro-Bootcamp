@@ -38,7 +38,6 @@ addresses = [address.get_text().strip(" \n").replace("|", ",").split(", ", 1)[1]
 driver = webdriver.Firefox()
 driver.get(GOOGLE_SHEET_URL)
 
-
 for i in range(len(links)):
     time.sleep(3)
     #find the form inputs
@@ -46,10 +45,12 @@ for i in range(len(links)):
     price_field = driver.find_element(By.XPATH, '//*[@id="mG61Hd"]/div[2]/div/div[2]/div[2]/div/div/div[2]/div/div[1]/div/div[1]/input')
     link_field = driver.find_element(By.XPATH, '//*[@id="mG61Hd"]/div[2]/div/div[2]/div[3]/div/div/div[2]/div/div[1]/div/div[1]/input')
     send_button = driver.find_element(By.XPATH, '//*[@id="mG61Hd"]/div[2]/div/div[3]/div[1]/div[1]/div/span/span')
+    #enter listing data from beautifulsoup scraper
     address_field.send_keys(addresses[i])
     price_field.send_keys(prices[i])
     link_field.send_keys(links[i])
     send_button.click()
+    #revert back to the form page to enter additional listing data
     time.sleep(3)
     additional_answers = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[1]/div/div[4]/a')
     additional_answers.click()
