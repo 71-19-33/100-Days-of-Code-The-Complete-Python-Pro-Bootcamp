@@ -9,7 +9,7 @@ def speed_calc_decorator(function):
         start_time = time.time()
         result = function(*args, **kwargs)
         finish_time = time.time()
-        total_time = finish_time - current_time
+        total_time = finish_time - start_time
         print(f"{function.__name__} run speed: {total_time}s")
         return result
     return wrapper
