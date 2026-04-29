@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import json
 
 app = Flask(__name__)
@@ -17,10 +17,13 @@ def post(blog_id):
     data_post = data_blogs[blog_id-1]
     return render_template("post.html", data_post = data_post)
 
-@app.route('/contact')
+@app.route('/contact', methods=["POST", "GET"])
 def contact():
-    return render_template("contact.html")
-
+    if request.method == "POST":
+        return render_template("contact.html", msg_sent=True)
+    else:
+        return render_template("contact.html", msg_sent=False)
+    
 @app.route('/about')
 def about():
     return render_template("about.html")
